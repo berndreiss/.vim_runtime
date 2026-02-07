@@ -9,7 +9,7 @@ function sql_search(){
         echo "$path_error_string"
         return 1
     fi
-    grep -Ri -- "--$1" "$SQL_PATH"
+    grep -Rin -- "--$1" "$SQL_PATH"
 
 }
 
@@ -18,13 +18,13 @@ function sql() {
         echo "$path_error_string"
         return 1
     fi
-    SEARCH_RESULTS=$(searchSQL "$1")
+    SEARCH_RESULTS=$(sql_search "$1")
     if [ -z "$SEARCH_RESULTS" ]; then
         echo "No SQL code found"
         return 2
     elif [[ $(echo "$SEARCH_RESULTS" | wc -l) > 2 ]]; then
         echo "More than one file found:"
-        searchSQL "$1"
+        sql_search "$1"
         return 3
     fi
     SQL_FILE=$(echo $SEARCH_RESULTS | cut -d: -f1)
@@ -33,3 +33,21 @@ function sql() {
     return 0
 }
 
+function vimsql() {
+    if [ ! -e $SQL_PATH ]; then
+        echo "$path_error_string"
+        return 1
+    fi
+    SEARCH_RESULTS=$(sql_search "$1")
+    if [ -z "$SEARCH_RESULTS" ]; then
+        echo "No SQL code found"
+        return 2
+    elif [[ $(echo "$SEARCH_RESULTS" | wc -l) > 2 ]]; then
+        echo "More than one file found:"
+        sql_search "$1"
+        return 3
+    fi
+    SQL_FILE=$(echo $SEARCH_RESULTS | cut -d: -f1)
+    LINE_NUMBER=$(echo $SEARCH_RESULTS | cut -d: -f2)
+    vim +$LINE_NUMBER $SQL_FILE
+}
