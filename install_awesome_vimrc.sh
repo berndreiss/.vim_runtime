@@ -18,3 +18,10 @@ catch
 endtry' > ~/.vimrc
 
 echo "Installed the Ultimate Vim configuration successfully! Enjoy :-)"
+
+if [ -f ../.tmux.conf ]; then
+   echo TMUX config file already exists!
+else
+    ln -s .tmux.conf ../.tmux.conf
+fi
+
