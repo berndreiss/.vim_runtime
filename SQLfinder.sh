@@ -49,5 +49,6 @@ function vimsql() {
     fi
     SQL_FILE=$(echo $SEARCH_RESULTS | cut -d: -f1)
     LINE_NUMBER=$(echo $SEARCH_RESULTS | cut -d: -f2)
+    cd $(dirname $SQL_FILE)
     vim +$LINE_NUMBER $SQL_FILE
 }
