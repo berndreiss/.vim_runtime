@@ -1,0 +1,31 @@
+BuffExplorer -> <leader>o
+MRU -> <leader>f
+quickly find file in current dir -> <leader>j
+quickle find buffer and open -> <leader>b
+
+nerdTreetoggle -> <leader>nn
+nerdTreeFromBookmark -> <leader>nb
+nerdTreefind -> <leader>nf
+
+Remove the Windows ^M -> <Leader>m 
+open a buffer for scribble -> <leader>q 
+Quickly open a markdown buffer -> <leader>x 
+
+delete buffer -> <leader>bd
+close all buffers -> <leader>ba
+next buffer -> <leader>l
+previous buffer -> <leader>h 
+
+toggle spell checking -> <leader>ss
+Switch CWD to directory of open buffer -> <leader>cd 
+
+new tab -> <leader>tn 
+tab only -> <leader>to 
+close tab -> <leader>tc 
+move tab -> <leader>tm 
+tab next -> <leader>t<leader> 
+last tab -> <leader>tl
+open tab edit with current dir -> <leader>te
+
+move between windows -> <C-h/j/k/l>
+show git changes -> <Leader>d
