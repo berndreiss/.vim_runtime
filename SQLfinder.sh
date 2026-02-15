@@ -76,7 +76,11 @@ function general_find() {
             #RETRIEVE SINGLE RESULT FROM RESULTS
             search_results=$(echo "$search_results" | nl | grep -E "^[[:space:]]+$input[[:space:]]" | sed -E "s/^[[:space:]]+$input[[:space:]]+//")
         else
+            if [[ "$(echo $input | awk '{$1=$1};1' | grep -c [[:space:]])" > 0 ]]; then
+                MULTI_MODE=TRUE
+            fi
             general_find $(echo "$input" | sed -E 's/[[:space:]]+/.*/g') "$prefix"
+            unset MULTI_MODE
             return 0;
         fi
     else
