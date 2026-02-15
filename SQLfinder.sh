@@ -1,11 +1,11 @@
 if [ -z $LINUX_PATH ]; then
-    export LINUX_PATH=/home/bernd/Desktop/LINUX
+    export LINUX_PATH=~/LINUX
 fi
 if [ -z $SQL_PATH ]; then
-    export SQL_PATH=/home/bernd/Desktop/SQL
+    export SQL_PATH=~/SQL
 fi
 
-path_error_string="File/Directory '$TARGET_PATH' does not exist (set path correctly)"
+path_error_string="File/Directory '$target_path' does not exist (set path correctly)"
 
 function general_search_pretty(){
     grep -rPin --color=always -- "^$2.*\K$1" "$3"
@@ -16,47 +16,80 @@ function general_search(){
 }
 
 function general_find() {
-    SEARCH_TERM="$1"
-    PREFIX="$2"
-    unset TARGET_PATH
 
+    #SET UP VARIABLES
+    delim_line="##############################################################\n"
+    search_term="$1"
+    prefix="$2"
+    unset target_path
+
+    #GET THE TARGET PATH: IF NOT PROVIDED AS THIRD ARGUMENT -> DEDUCE FROM PREFIX
     if [ ! -z "$3" ]; then
-        TARGET_PATH="$3"
-    elif [[ "$PREFIX" == "--" && ! -z "$SQL_PATH" ]]; then
-        TARGET_PATH="$SQL_PATH"
-    elif [[ "$PREFIX" == "#" && ! -z "$LINUX_PATH" ]]; then
-        TARGET_PATH="$LINUX_PATH"
+        target_path="$3"
+    elif [[ "$prefix" == "--" && ! -z "$SQL_PATH" ]]; then
+        target_path="$SQL_PATH"
+    elif [[ "$prefix" == "#" && ! -z "$LINUX_PATH" ]]; then
+        target_path="$LINUX_PATH"
     fi
-    if [ -z $TARGET_PATH ]; then
+
+    #ABORT IF TARGET PATH WAS NOT PROVIDED
+    if [ -z $target_path ]; then
         echo "No path to search for provided."
         return 1
     fi
-    if [ ! -e $TARGET_PATH ]; then
+
+    #ABORT IF TARGET PATH DOES NOT EXIST
+    if [ ! -e $target_path ]; then
         echo "$path_error_string"
         return 2
     fi
-    SEARCH_RESULTS=$(general_search "$SEARCH_TERM" "$PREFIX" "$TARGET_PATH")
-    if [ -z "$SEARCH_RESULTS" ]; then
+
+    search_results=$(general_search "$search_term" "$prefix" "$target_path")
+
+    #HANDLE RESULTS:
+    #  - CASE 1 (NO RESULTS) -> RETURN
+    #  - CASE 2 (MORE THAN 1 RESULT) -> ASK USER WHICH RESULT TO HANDLE
+    #  - CASE 3 (ONE RESULT) -> DO NOTHING (JUST UNSET THE DELIM_LINE)
+    if [ -z "$search_results" ]; then
         echo "No code found"
         return 3
-    elif [[ $(echo "$SEARCH_RESULTS" | wc -l) > 1 ]]; then
+    elif [[ $(echo "$search_results" | wc -l) > 1 ]]; then
         echo "More than one entry found:"
-        general_search_pretty "$SEARCH_TERM" "$PREFIX" "$TARGET_PATH" | nl
+
+        #PRINT PRETTY
+        general_search_pretty "$search_term" "$prefix" "$target_path" | nl
         read -p "Which entry to use? " input
         echo ""
+
+        #ABORT ON EMPTY INPUT, GET LINE ON NUMBER, DO ENTIRELY NEW SEARCH ELSE
         if [ -z "$input" ]; then
-            return;
+            return 0;
         elif [[ "$input" =~ ^[0-9]+$ ]]; then
-            hit=$(echo "$SEARCH_RESULTS" | nl | grep -E "^[[:space:]]+$input[[:space:]]" | cut -d: -f3 | sed "s/$PREFIX//")
-            general_find "$hit" "$PREFIX"
+            #RETRIEVE SINGLE RESULT FROM RESULTS
+            search_results=$(echo "$search_results" | nl | grep -E "^[[:space:]]+$input[[:space:]]" | sed -E "s/^[[:space:]]+$input[[:space:]]+//")
         else
-            general_find $(echo "$input" | sed -E 's/[[:space:]]+/.*/g') "$PREFIX"
+            general_find $(echo "$input" | sed -E 's/[[:space:]]+/.*/g') "$prefix"
+            return 0;
         fi
-        return 4
+    else
+        delim_line=""
     fi
-    TARGET_FILE=$(echo "$SEARCH_RESULTS" | cut -d: -f1)
-    TERM=$(echo "$SEARCH_RESULTS" | cut -d: -f3)
-    sed -n "/$TERM/,/$PREFIX\/\/\//p" $TARGET_FILE | sed '1d;$d' | tee >(xclip -selection clipboard -i)
+
+    #GET FIELDS FROM RESULTS
+    target_file=$(echo "$search_results" | cut -d: -f1)
+    match_term=$(echo "$search_results" | cut -d: -f3)
+    line_number=$(echo "$search_results" | cut -d: -f2)
+
+    #OPEN VIM IF FUNCTION WAS CALLED WITH VIM_MODE=TRUE, COPY TO CLIPBOARD OTHERWISE
+    if [[ "$VIM_MODE" == "TRUE" ]]; then
+        vim +"$line_number" "$target_file"
+    else
+        echo -ne "$delim_line"
+        sed -n  "$line_number,\$p" $target_file | \
+            perl -0777 -ne "print \$1 if /\\Q\$match_term\\E(.*?)\\Q\$prefix\\E\/\/\//s"  | \
+            sed '1d;$d' | tee >(xclip -selection clipboard -i)
+        echo -ne "$delim_line"
+    fi
     return 0
 }
 
@@ -65,50 +98,39 @@ function linux() {
         cd $LINUX_PATH
         return 0;
     fi
-    TERM="$1"
-    if [ $# -gt 1 ]; then
-        i=0
-        while [ $i -lt $# ]; do
-            shift
-            TERM="$TERM.*$1"
-            i=$((i+1))
-        done
-    fi
-    general_find "$TERM" "#" "$2"
+    query="$1"
+    get_term "$@"
+    general_find "$query" "#"
 }
 function sql() {
     if [ -z "$1" ]; then
         cd $SQL_PATH
         return 0;
     fi
-    TERM="$1"
+    query="$1"
+    get_term "$@"
+    general_find "$query" "--"
+}
+
+function vimlinux() {
+    VIM_MODE=TRUE
+    linux "$@"
+    unset VIM_MODE
+}
+
+function vimsql() {
+    VIM_MODE=TRUE
+    sql "$@"
+    unset VIM_MODE
+}
+
+get_term(){
     if [ $# -gt 1 ]; then
         i=0
         while [ $i -lt $# ]; do
             shift
-            TERM="$TERM.*$1"
+            query="$query.*$1"
             i=$((i+1))
         done
     fi
-    general_find "$TERM" "--" "$2"
-}
-
-function vimsql() {
-    if [ ! -e $SQL_PATH ]; then
-        echo "$path_error_string"
-        return 1
-    fi
-    SEARCH_RESULTS=$(general_search "$1" "--" "$SQL_PATH")
-    if [ -z "$SEARCH_RESULTS" ]; then
-        echo "No SQL code found"
-        return 2
-    elif [[ $(echo "$SEARCH_RESULTS" | wc -l) > 2 ]]; then
-        echo "More than one file found:"
-        general_search "$1" "--" "$SQL_PATH"
-        return 3
-    fi
-    SQL_FILE=$(echo $SEARCH_RESULTS | cut -d: -f1)
-    LINE_NUMBER=$(echo $SEARCH_RESULTS | cut -d: -f2)
-    cd $(dirname $SQL_FILE)
-    vim +$LINE_NUMBER $SQL_FILE
 }
