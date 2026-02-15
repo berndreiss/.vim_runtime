@@ -99,7 +99,7 @@ function general_find() {
             #remove header and prefix/// lines
             sed '1d;$d' | \
             #print and copy to clipboard
-            tee >(xclip -selection clipboard -i)
+            tee >(perl -pe 'chomp if eof' | xclip -selection clipboard -i)
         echo -ne "$delim_line"
     fi
     return 0
@@ -114,6 +114,10 @@ function linux() {
     get_term "$@"
     general_find "$query" "#"
 }
+function linuxe(){
+    linux "$@"
+    exit
+}
 function sql() {
     if [ -z "$1" ]; then
         cd $SQL_PATH
@@ -122,6 +126,10 @@ function sql() {
     query="$1"
     get_term "$@"
     general_find "$query" "--"
+}
+function sqle() {
+    sql "$@"
+    exit
 }
 
 function vimlinux() {
