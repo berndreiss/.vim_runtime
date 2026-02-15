@@ -1,3 +1,4 @@
+COLOR_MODE=never
 if [ -z $LINUX_PATH ]; then
     export LINUX_PATH=~/LINUX
 fi
@@ -8,11 +9,18 @@ fi
 path_error_string="File/Directory '$target_path' does not exist (set path correctly)"
 
 function general_search_pretty(){
-    grep -rPin --color=always -- "^$2.*\K\Q$1\E" "$3" | grep -v -- "^$2///$"
+    COLOR_MODE=always
+    general_search "$@"
+    COLOR_MODE=never
 }
 
 function general_search(){
-    grep -rPin  -- "^$2.*\Q$1\E" "$3" | grep -v -- "^$2///$"
+    #IF MULTIPLE ARGUMENTS HAVE BEEN PASSED WE WANT TO USE REGEX
+    if [[ "$MULTI_MODE" == TRUE ]]; then
+        grep -rPin --color="$COLOR_MODE" -- "^$2.*\K$1" "$3" | grep -v -- "$2\/\/\/$"
+    else
+        grep -rPin --color="$COLOR_MODE" -- "^$2.*\K\Q$1\E" "$3" | grep -v -- "$2\/\/\/$"
+    fi
 }
 
 function general_find() {
@@ -113,6 +121,7 @@ function linux() {
     query="$1"
     get_term "$@"
     general_find "$query" "#"
+    unset MULTI_MODE
 }
 function linuxe(){
     linux "$@"
@@ -126,6 +135,7 @@ function sql() {
     query="$1"
     get_term "$@"
     general_find "$query" "--"
+    unset MULTI_MODE
 }
 function sqle() {
     sql "$@"
@@ -146,6 +156,7 @@ function vimsql() {
 
 get_term(){
     if [ $# -gt 1 ]; then
+        MULTI_MODE=TRUE
         i=0
         while [ $i -lt $# ]; do
             shift
