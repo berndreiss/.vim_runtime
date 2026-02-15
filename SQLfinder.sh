@@ -8,11 +8,11 @@ fi
 path_error_string="File/Directory '$target_path' does not exist (set path correctly)"
 
 function general_search_pretty(){
-    grep -rPin --color=always -- "^$2.*\K$1" "$3"
+    grep -rPin --color=always -- "^$2.*\K\Q$1\E" "$3" | grep -v -- "$2///"
 }
 
 function general_search(){
-    grep -rPin  -- "^$2.*$1" "$3"
+    grep -rPin  -- "^$2.*\Q$1\E" "$3" | grep -v -- "$2///"
 }
 
 function general_find() {
