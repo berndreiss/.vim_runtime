@@ -85,9 +85,21 @@ function general_find() {
         vim +"$line_number" "$target_file"
     else
         echo -ne "$delim_line"
+
+        #GREP THE PATTERN FROM THE FILE
+        #start by only considering content from line number where pattern was found
         sed -n  "$line_number,\$p" $target_file | \
+            #do some perl magic: seds pattern matching is too aggressive and searches
+            #until the last match of prefix///
+            #  -> -0777: slurp whole input, so matches can span lines
+            #  -> .*?: non-greedy, stops at first match
+            #  -> \Q...\E: escape any regex special characters
+            #  s flas: make . match new lines
             perl -0777 -ne "print \$1 if /\\Q\$match_term\\E(.*?)\\Q\$prefix\\E\/\/\//s"  | \
-            sed '1d;$d' | tee >(xclip -selection clipboard -i)
+            #remove header and prefix/// lines
+            sed '1d;$d' | \
+            #print and copy to clipboard
+            tee >(xclip -selection clipboard -i)
         echo -ne "$delim_line"
     fi
     return 0
