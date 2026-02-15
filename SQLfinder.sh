@@ -1,9 +1,11 @@
 COLOR_MODE=never
 if [ -z $LINUX_PATH ]; then
     export LINUX_PATH=~/LINUX
+    export LINUX_PATH_FULL="$LINUX_PATH"
 fi
 if [ -z $SQL_PATH ]; then
     export SQL_PATH=~/SQL
+    export SQL_PATH_FULL="$SQL_PATH"
 fi
 
 path_error_string="File/Directory '$target_path' does not exist (set path correctly)"
@@ -17,9 +19,9 @@ function general_search_pretty(){
 function general_search(){
     #IF MULTIPLE ARGUMENTS HAVE BEEN PASSED WE WANT TO USE REGEX
     if [[ "$MULTI_MODE" == TRUE ]]; then
-        grep -rPin --color="$COLOR_MODE" -- "^$2.*\K$1" "$3" | grep -v -- "$2\/\/\/$"
+        grep -rPin --color="$COLOR_MODE" -- "^$2.*\K$1" "$3" | grep -v -- "$2///$"
     else
-        grep -rPin --color="$COLOR_MODE" -- "^$2.*\K\Q$1\E" "$3" | grep -v -- "$2\/\/\/$"
+        grep -rPin --color="$COLOR_MODE" -- "^$2.*\K\Q$1\E" "$3" | grep -v -- "$2///$"
     fi
 }
 
@@ -34,10 +36,10 @@ function general_find() {
     #GET THE TARGET PATH: IF NOT PROVIDED AS THIRD ARGUMENT -> DEDUCE FROM PREFIX
     if [ ! -z "$3" ]; then
         target_path="$3"
-    elif [[ "$prefix" == "--" && ! -z "$SQL_PATH" ]]; then
-        target_path="$SQL_PATH"
-    elif [[ "$prefix" == "#" && ! -z "$LINUX_PATH" ]]; then
-        target_path="$LINUX_PATH"
+    elif [[ "$prefix" == "--" && ! -z "$SQL_PATH_FULL" ]]; then
+        target_path="$SQL_PATH_FULL"
+    elif [[ "$prefix" == "#" && ! -z "$LINUX_PATH_FULL" ]]; then
+        target_path="$LINUX_PATH_FULL"
     fi
 
     #ABORT IF TARGET PATH WAS NOT PROVIDED
@@ -116,10 +118,13 @@ function general_find() {
     fi
     return 0
 }
-
+###LINUX FUNCTIONS
 function linux() {
+    if [ -z "$LINUX_PATH_FULL" ]; then
+        LINUX_PATH_FULL="$LINUX_PATH"
+    fi
     if [ -z "$1" ]; then
-        cd $LINUX_PATH
+        cd $LINUX_PATH_FULL
         return 0;
     fi
     query="$1"
@@ -131,9 +136,31 @@ function linuxe(){
     linux "$@"
     exit
 }
+function pgl(){
+    LINUX_PATH_FULL="$LINUX_PATH/POSTGRES"
+    linux "$@"
+    LINUX_PATH_FULL="$LINUX_PATH"
+}
+function pge(){
+    pgl "$@"
+    exit
+}
+function oraclel(){
+    LINUX_PATH_FULL="$LINUX_PATH/ORACLE"
+    linux "$@"
+    LINUX_PATH_FULL="$LINUX_PATH"
+}
+function oraclele(){
+    oraclel "$@"
+    exit
+}
+###SQL FUNCTIONS
 function sql() {
+    if [ -z "$SQL_PATH_FULL" ]; then
+        SQL_PATH_FULL="$SQL_PATH"
+    fi
     if [ -z "$1" ]; then
-        cd $SQL_PATH
+        cd $SQL_PATH_FULL
         return 0;
     fi
     query="$1"
@@ -145,19 +172,57 @@ function sqle() {
     sql "$@"
     exit
 }
+function pg(){
+    SQL_PATH_FULL="$SQL_PATH/POSTGRES"
+    sql "$@"
+    SQL_PATH_FULL="$SQL_PATH"
+}
 
+function pge(){
+    pg "$@"
+    exit
+}
+function oracle(){
+    SQL_PATH_FULL="$SQL_PATH/ORACLE"
+    sql "$@"
+    SQL_PATH_FULL="$SQL_PATH"
+}
+function oraclee(){
+    oracle "$@"
+    exit
+}
+###VIM FUNCTIONS
 function vimlinux() {
     VIM_MODE=TRUE
     linux "$@"
     unset VIM_MODE
 }
-
+function vimpgl() {
+    VIM_MODE=TRUE
+    pgl "$@"
+    unset VIM_MODE
+}
+function vimoraclel() {
+    VIM_MODE=TRUE
+    oraclel "$@"
+    unset VIM_MODE
+}
 function vimsql() {
     VIM_MODE=TRUE
     sql "$@"
     unset VIM_MODE
 }
-
+function vimpg() {
+    VIM_MODE=TRUE
+    pg "$@"
+    unset VIM_MODE
+}
+function vimoracle() {
+    VIM_MODE=TRUE
+    oracle "$@"
+    unset VIM_MODE
+}
+###HELPER FUNCTIONS
 get_term(){
     if [ $# -gt 1 ]; then
         MULTI_MODE=TRUE
