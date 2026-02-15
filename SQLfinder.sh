@@ -8,11 +8,11 @@ fi
 path_error_string="File/Directory '$target_path' does not exist (set path correctly)"
 
 function general_search_pretty(){
-    grep -rPin --color=always -- "^$2.*\K\Q$1\E" "$3" | grep -v -- "$2///"
+    grep -rPin --color=always -- "^$2.*\K\Q$1\E" "$3" | grep -v -- "^$2///$"
 }
 
 function general_search(){
-    grep -rPin  -- "^$2.*\Q$1\E" "$3" | grep -v -- "$2///"
+    grep -rPin  -- "^$2.*\Q$1\E" "$3" | grep -v -- "^$2///$"
 }
 
 function general_find() {
@@ -96,8 +96,8 @@ function general_find() {
             #  -> \Q...\E: escape any regex special characters
             #  s flas: make . match new lines
             perl -0777 -ne "print \$1 if /\\Q\$match_term\\E(.*?)\\Q\$prefix\\E\/\/\//s"  | \
-            #remove header and prefix/// lines
-            sed '1d;$d' | \
+            #remove commented lines
+            grep -v -- "^$prefix" | \
             #print and copy to clipboard
             tee >(perl -pe 'chomp if eof' | xclip -selection clipboard -i)
         echo -ne "$delim_line"
