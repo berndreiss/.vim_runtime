@@ -17,11 +17,24 @@ function general_search_pretty(){
 }
 
 function general_search(){
+    query="$1"
+    prefix="$2"
+    target_path="$3"
     #IF MULTIPLE ARGUMENTS HAVE BEEN PASSED WE WANT TO USE REGEX
+    #ALSO USE THE FIRST ARGUMENT AS A HINT FOR WHICH FILE TO USE
     if [[ "$MULTI_MODE" == TRUE ]]; then
-        grep -rPin --color="$COLOR_MODE" -- "^$2.*\K$1" "$3" | grep -v -- "$2///$"
+        file_stem="$(echo $query | cut -d. -f1)"
+        mapfile -t files_found < <(find "$target_path" -name "*$file_stem*")
+        if [ -z "$files_found" ]; then
+            grep -rPin --color="$COLOR_MODE" -- "^$prefix.*\K$query" "$target_path" | grep -v -- "$prefix///$"
+        else
+            for file in "${files_found[@]}"; do
+                query_remaining=$(echo "$query" | sed "s/^$file_stem\.\*//")
+                grep -Pin --with-filename --color="$COLOR_MODE" -- "^$prefix.*\K$query_remaining" "$file" | grep -v -- "$prefix///$"
+            done
+        fi
     else
-        grep -rPin --color="$COLOR_MODE" -- "^$2.*\K\Q$1\E" "$3" | grep -v -- "$2///$"
+        grep -rPin --color="$COLOR_MODE" -- "^$prefix.*\K\Q$query\E" "$target_path" | grep -v -- "$prefix///$"
     fi
 }
 
