@@ -126,7 +126,7 @@ function general_find() {
             #remove commented lines
             grep -v -- "^$prefix" | \
             #print and copy to clipboard
-            tee >(perl -pe 'chomp if eof' | xclip -selection clipboard -i)
+            tee >(perl -pe 'chomp if eof' | xsel --clipboard --input)
         echo -ne "$delim_line"
     fi
     return 0
