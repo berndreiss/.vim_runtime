@@ -154,7 +154,7 @@ function pgl(){
     linux "$@"
     LINUX_PATH_FULL="$LINUX_PATH"
 }
-function pge(){
+function pgle(){
     pgl "$@"
     exit
 }
