@@ -50,3 +50,8 @@ nnoremap <Leader>pp :r !xclip -o -selection clipboard<CR>
 inoremap <Leader>pp <Esc>:set paste<CR>i<C-r>=system('xclip -o -selection clipboard')<CR><Esc>:set nopaste<CR>i
 inoremap <leader>c [CODE]<CR><CR>[/CODE]<Up>
 
+noremap j gj
+noremap k gk
+noremap gj j
+noremap gk k
+
