@@ -54,4 +54,6 @@ noremap j gj
 noremap k gk
 noremap gj j
 noremap gk k
+noremap $ g$
+noremap 0 g0
 
