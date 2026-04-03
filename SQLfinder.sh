@@ -113,6 +113,7 @@ function general_find() {
     if [[ "$VIM_MODE" == "TRUE" ]]; then
         vim +"$line_number" "$target_file"
     else
+        echo -ne "\n"
         echo -ne "$delim_line"
 
         #GREP THE PATTERN FROM THE FILE
@@ -129,7 +130,7 @@ function general_find() {
             grep -v -- "^$prefix" | \
             #print and copy to clipboard
             tee >(perl -pe 'chomp if eof' | xsel --clipboard --input)
-        echo -ne "$delim_line"
+        echo -ne "$delim_line\n"
     fi
     return 0
 }
