@@ -22,20 +22,22 @@ function general_search(){
     target_path="$3"
     #IF MULTIPLE ARGUMENTS HAVE BEEN PASSED WE WANT TO USE REGEX
     #ALSO USE THE FIRST ARGUMENT AS A HINT FOR WHICH FILE TO USE
-    if [[ "$MULTI_MODE" == TRUE ]]; then
-        file_stem="$(echo $query | cut -d. -f1)"
-        mapfile -t files_found < <(find "$target_path" -name "*$file_stem*")
-        if [ -z "$files_found" ]; then
-            grep -rPin --color="$COLOR_MODE" -- "^$prefix.*\K$query" "$target_path" | grep -v -- "$prefix///$"
-        else
-            for file in "${files_found[@]}"; do
-                query_remaining=$(echo "$query" | sed "s/^$file_stem\.\*//")
-                grep -Pin --with-filename --color="$COLOR_MODE" -- "^$prefix.*\K$query_remaining" "$file" | grep -v -- "$prefix///$"
-            done
+    file_stem="$(echo $query | cut -d. -f1)"
+    mapfile -t files_found < <(find "$target_path" -iname "*$file_stem*.$FILE_EXTENSION")
+    query_remaining=$(echo "$query" | sed "s/^$file_stem\.\*//")
+    for file in "${files_found[@]}"; do
+        mapfile -t matches < <(grep -i -- "^$prefix" "$file" | grep -v -- "$prefix///")
+        for match in "${matches[@]}"; do
+            grep -Pn --with-filename --color="$COLOR_MODE" -- "$match" "$file"
+        done
+    done
+    mapfile -t files_all < <(find "$target_path" -name "*.$FILE_EXTENSION")
+
+    for file in "${files_all[@]}"; do
+        if [[ $(grep "$file" <<< "${files_found[*]}") == "" ]]; then
+          grep -Pin --with-filename --color="$COLOR_MODE" -- "^$prefix.*\K$query_remaining" "$file" | grep -v -- "$prefix///"
         fi
-    else
-        grep -rPin --color="$COLOR_MODE" -- "^$prefix.*\K\Q$query\E" "$target_path" | grep -v -- "$prefix///$"
-    fi
+    done
 }
 
 function general_find() {
@@ -140,6 +142,8 @@ function linux() {
         cd $LINUX_PATH_FULL
         return 0;
     fi
+    MODE=BASH
+    FILE_EXTENSION=sh
     query="$1"
     get_term "$@"
     general_find "$query" "#"
@@ -176,6 +180,8 @@ function sql() {
         cd $SQL_PATH_FULL
         return 0;
     fi
+    MODE=SQL
+    FILE_EXTENSION=sql
     query="$1"
     get_term "$@"
     general_find "$query" "--"
